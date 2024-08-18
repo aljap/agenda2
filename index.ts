@@ -13,13 +13,20 @@ datos del contacto:
 nombre completo
 telefono
 correo
- */
+
+Continuar el proyecto de la agenda telefonica y agregar los metodos para agregar, actualizar, filtrar y eliminar
+Validar los campos que no llegen undefined, retornar un 400 bad request
+validar el correo que sea unico (que no se repita por contacto), retornar un bad request 400 
+
+*/
 import express, {Request, response, Response} from "express";
+import { request } from "http";
 
 
 const app = express();
 const port = 3000;
 app.use(express.json());
+let sequence = 0;
 
 type Contact = {
     id: number,
@@ -28,24 +35,7 @@ type Contact = {
     correo: string
 }
 
-const contacts: Contact[] = [{
-    id: 1,
-    nombre: "Juan Pérez",
-    telefono: 123456789,
-    correo: "juan.perez@example.com"
-  },
-  {
-    id: 2,
-    nombre: "María García",
-    telefono: 987654321,
-    correo: "maria.garcia@example.com"
-  },
-  {
-    id: 3,
-    nombre: "Luis Rodríguez",
-    telefono: 456789123,
-    correo: "luis.rodriguez@example.com"
-  }]
+const contacts: Contact[] = []
 
 
 app.get('/api/contacts/:id', (request: Request, response: Response) => {
@@ -77,6 +67,102 @@ app.get('/api/contacts/:id', (request: Request, response: Response) => {
 app.get('/api/contacts', (request: Request, response: Response) => {
     response.json(contacts)
 
+})
+//filtra por nombre de contacto
+app.get('/api/contacts/filter/:nombre', (request: Request, response: Response) => {
+    const nombre = request.params.nombre;
+
+    const result = contacts.filter((contacto) => contacto.nombre.toLocaleLowerCase().includes(nombre.toLocaleLowerCase()));
+    response.json(result)
+
+})
+
+app.post('/api/contacts', (request: Request, response: Response) =>{
+    const {nombre, correo, telefono} = request.body;
+
+    if (!nombre || !correo || !telefono) {
+        return response.status(400).json({
+            msg: "Todos los campos son requeridos",
+        });
+    }
+
+    if (typeof telefono !== "number") {
+        return response.status(400).json({
+            msg: "El campo 'telefono' debe ser un número",
+            parameter: "telefono",
+            value: telefono,
+        });
+    }
+
+    if (contacts.some((contact) => contact.correo === correo)) {
+        return response.status(400).json({
+            msg: "El correo ya existe",
+            parameter: "correo",
+            value: correo,
+        });
+    }
+
+    sequence +=1;
+    const contact: Contact = {
+        id: sequence,
+        nombre,
+        correo,
+        telefono
+    }
+
+    contacts.push(contact)
+    response.status(201).json(contact)
+})
+//Actualiza
+app.put('/api/contacts/:id', (request: Request, response: Response) => {
+    const { id } = request.params;
+    const { nombre, telefono, correo} =request.body;
+
+    if(Number.isNaN(id)) {
+        return response.status(400).json({
+            msg: "id debe ser un numero",
+            parameter: 'id',
+            value: id
+        });
+    }
+
+    const result = contacts.find(
+        (item) => item.id === Number.parseInt(id));
+    
+    if(!result){
+        return response.status(404).json({
+            msg: `No se encuentra un producto con el id: ${id}`
+        })
+    }
+    result.nombre = nombre ?? result.nombre;
+    result.telefono = telefono ?? result.telefono;
+    result.correo = correo ?? result.correo;
+
+
+    
+    response.status(200).json({
+        data:result
+    });
+
+})
+
+app.delete('/api/contacts/:id', (request: Request, response: Response) =>{
+    const { id } = request.params;
+
+    const contact = contacts.find((item)=> item.id === Number.parseInt(id));
+
+    if(!contact) {
+        return response.status(404).json({
+            msg: `No se enceuntra un producto con el id: ${id}`
+        });
+    }
+
+    const contactIndex = contacts.findIndex((item) => item.id === Number.parseInt(id));
+    contacts.splice(contactIndex, 1);
+
+    response.json({
+        msg: `Contacto: ${contact.nombre} borrado`
+    })
 })
 
 app.listen(port, () => console.log(`This server is running at port ${port}`))       
