@@ -1,0 +1,21 @@
+{
+  "name": "agenda2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx ts-node-dev index.ts --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.4.0",
+    "nodemon": "^3.1.4",
+    "typescript": "^5.5.4"
+  },
+  "description": ""
+}
